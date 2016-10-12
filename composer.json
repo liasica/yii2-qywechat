@@ -1,0 +1,20 @@
+{
+    "name": "liasica/yii2-qywechat",
+    "description": "企业微信号开发SDK",
+    "type": "yii2-component",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "liasica",
+            "email": "magicrolan@qq.com"
+        }
+    ],
+    "require": {
+        "yiisoft/yii2": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "liasica\\qywechat\\": ""
+        }
+    }
+}
