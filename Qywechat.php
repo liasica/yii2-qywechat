@@ -6,6 +6,9 @@
  */
 namespace liasica\qywechat;
 
+use liasica\qywechat\base\HttpRequest;
+
 class Qywechat
 {
+    use HttpRequest;
 }
