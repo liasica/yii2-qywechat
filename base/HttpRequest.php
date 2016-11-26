@@ -10,16 +10,23 @@ trait HttpRequest
 {
     public $data;
     public $headers;
+    public $url;
 
-    public function build_url($url, array $params)
+    /**
+     * 构建URL
+     * @param       $url
+     * @param array $params
+     * @return string
+     */
+    public function buildHttpUrl($url, array $params)
     {
+        if (!empty($options)) {
+            $url .= (stripos($url, '?') === null ? '&' : '?') . http_build_query($options);
+        }
+        return $url;
     }
 
-    public function curl_post()
-    {
-    }
-
-    public function curl_get()
+    public function request($method, $data, $headers)
     {
     }
 }
