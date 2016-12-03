@@ -13,6 +13,7 @@ abstract class BaseWechat extends Component
 {
     protected $cacheTime = 7200;
     private $lastError;
+    public $lastRet;
 
     /**
      * 构建URL

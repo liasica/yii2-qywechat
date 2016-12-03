@@ -7,13 +7,17 @@
 namespace liasica\qywechat;
 
 use liasica\qywechat\base\BaseQyWechat;
+use liasica\qywechat\crypt\WXBizMsgCrypt;
 use Yii;
+use yii\helpers\Json;
 use yii\web\HttpException;
 
 class Qywechat extends BaseQyWechat
 {
     public $corpid;
     public $secret;
+    public $msgAESKey;
+    public $msgToken;
     public $cachePrefix = 'cache_prefix_liasica_qywechat';
 
     public function __construct($config = [])
@@ -100,5 +104,41 @@ class Qywechat extends BaseQyWechat
                 'scope'         => 'snsapi_base',
                 'state'         => $state,
             ]) . '#wechat_redirect';
+    }
+
+    /**
+     * 校验回调URL
+     */
+    public function verifyURL()
+    {
+        $echostr = '';
+        $wxcpt   = new WXBizMsgCrypt($this->msgToken, $this->msgAESKey, $this->corpid);
+        $errCode = $wxcpt->VerifyURL($_GET['msg_signature'], $_GET['timestamp'], $_GET['nonce'], $_GET['echostr'], $echostr);
+        if ($errCode == 0) {
+            echo $echostr;
+            Yii::$app->end();
+        }
+    }
+
+    /**
+     * @return bool|string
+     */
+    public function decryptMsg()
+    {
+        $sMsg = '';
+        $body = Yii::$app->request->getRawBody();
+        $wxcpt   = new WXBizMsgCrypt($this->msgToken, $this->msgAESKey, $this->corpid);
+        $errCode = $wxcpt->DecryptMsg($_GET['msg_signature'], $_GET['timestamp'], $_GET['nonce'], $body, $sMsg);
+        if ($errCode == 0) {
+            // 解密成功，sMsg即为xml格式的明文
+            // 对明文的处理
+            // $xml = new \DOMDocument();
+            // $xml->loadXML($sMsg);
+            // $content = $xml->getElementsByTagName('Content')->item(0)->nodeValue;
+            // print("content: " . $content . "\n\n");
+            return $sMsg;
+        } else {
+            return false;
+        }
     }
 }

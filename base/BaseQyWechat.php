@@ -150,4 +150,68 @@ abstract class BaseQyWechat extends BaseWechat
         ]);
         return isset($ret['errcode']) && $ret['errcode'] !== 0 ? false : $ret;
     }
+
+    const QY_CHAT_GET = 'cgi-bin/chat/get';
+
+    /**
+     * 获取会话
+     * @param $chatid
+     * @return bool|mixed
+     */
+    public function getChat($chatid)
+    {
+        $ret           = $this->get(self::QY_CHAT_GET, [
+            'access_token' => $this->getAccessToken(),
+            'chatid'       => $chatid,
+        ]);
+        $this->lastRet = $ret;
+        return isset($ret['errcode']) && $ret['errcode'] !== 0 ? false : $ret;
+    }
+
+    const QY_CHAT_CREATE = 'cgi-bin/chat/create';
+
+    /**
+     * 创建会话
+     * @param $chatid
+     * @param $chatname
+     * @param $chatowner
+     * @param $userlist
+     * @return bool|mixed
+     */
+    public function createChat($chatid, $chatname, $chatowner, $userlist)
+    {
+        $ret           = $this->rawPost(self::QY_CHAT_CREATE, [
+            'chatid'   => (string)$chatid,
+            'name'     => $chatname,
+            'owner'    => $chatowner,
+            'userlist' => $userlist,
+        ], ['access_token' => $this->getAccessToken()]);
+        $this->lastRet = $ret;
+        return isset($ret['errcode']) && $ret['errcode'] !== 0 ? false : $ret;
+    }
+
+    const QY_CHAT_SEND = 'cgi-bin/chat/send';
+
+    /**
+     * 发送消息
+     * @param        $chatid
+     * @param        $sender
+     * @param        $data
+     * @param string $type
+     * @param string $msgtype
+     * @return bool|mixed
+     */
+    public function sendChat($chatid, $sender, $data, $type = 'group', $msgtype = 'text')
+    {
+        $ret           = $this->rawPost(self::QY_CHAT_SEND, array_merge([
+            'receiver' => [
+                'type' => $type,
+                'id'   => $chatid,
+            ],
+            'sender'   => $sender,
+            'msgtype'  => $msgtype,
+        ], $data), ['access_token' => $this->getAccessToken()]);
+        $this->lastRet = $ret;
+        return isset($ret['errcode']) && $ret['errcode'] !== 0 ? false : $ret;
+    }
 }
