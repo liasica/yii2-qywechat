@@ -115,6 +115,21 @@ abstract class BaseQyWechat extends BaseWechat
         return isset($ret['errcode']) && $ret['errcode'] !== 0 ? false : $ret;
     }
 
+    const QY_UPDATE_USER = 'cgi-bin/user/update';
+
+    /**
+     * 更新用户信息
+     * @param       $userid
+     * @param array $data
+     * @return bool|mixed
+     */
+    public function updateUser($userid, array $data)
+    {
+        $ret           = $this->rawPost(self::QY_UPDATE_USER, array_merge($data, ['userid' => $userid]), ['access_token' => $this->getAccessToken()]);
+        $this->lastRet = $ret;
+        return isset($ret['errcode']) && $ret['errcode'] !== 0 ? false : $ret;
+    }
+
     const QY_DEPARTMENT_LIST_URI = 'cgi-bin/department/list';
 
     /**
@@ -225,6 +240,24 @@ abstract class BaseQyWechat extends BaseWechat
     public function sendMessage($data)
     {
         $ret           = $this->rawPost(self::QY_MSG_SEND, $data, ['access_token' => $this->getAccessToken()]);
+        $this->lastRet = $ret;
+        return isset($ret['errcode']) && $ret['errcode'] !== 0 ? false : $ret;
+    }
+
+    const QY_MATERIAL_ADD = 'cgi-bin/material/add_material';
+
+    /**
+     * 上传其他类型永久素材
+     * @param       $type
+     * @param       $file
+     * @param array $data
+     * @return bool|mixed
+     */
+    public function addMaterial($type, $file, $data = [])
+    {
+        $ret           = $this->post(self::QY_MATERIAL_ADD, array_merge($data, [
+            'media' => $this->uploadFile($file),
+        ]), ['access_token' => $this->getAccessToken(), 'type' => $type]);
         $this->lastRet = $ret;
         return isset($ret['errcode']) && $ret['errcode'] !== 0 ? false : $ret;
     }
