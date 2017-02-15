@@ -72,7 +72,7 @@ class Qywechat extends BaseQyWechat
      */
     protected function getCacheKey($name)
     {
-        return $this->cachePrefix . '_' . $this->corpid . '_';
+        return $this->cachePrefix . '_' . $this->corpid . '_' . $name;
     }
 
     /**

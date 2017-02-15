@@ -285,18 +285,4 @@ abstract class BaseQyWechat extends BaseWechat
         $this->lastRet = $ret;
         return isset($ret['errcode']) && $ret['errcode'] !== 0 ? false : $ret;
     }
-
-    const QY_MSG_SEND = 'cgi-bin/message/send';
-
-    /**
-     * 发送消息通知
-     * @param $data
-     * @return bool|mixed
-     */
-    public function sendMessage($data)
-    {
-        $ret           = $this->rawPost(self::QY_MSG_SEND, $data, ['access_token' => $this->getAccessToken()]);
-        $this->lastRet = $ret;
-        return isset($ret['errcode']) && $ret['errcode'] !== 0 ? false : $ret;
-    }
 }
