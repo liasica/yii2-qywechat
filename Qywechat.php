@@ -131,10 +131,90 @@ class Qywechat extends BaseQyWechat
         if ($errCode == 0) {
             // 解密成功，sMsg即为xml格式的明文
             // 对明文的处理
-            $ret = (array)simplexml_load_string($sMsg, 'SimpleXMLElement', LIBXML_NOCDATA);
-            return $ret;
+            // $xml = new \DOMDocument();
+            // $xml->loadXML($sMsg);
+            // $content = $xml->getElementsByTagName('Content')->item(0)->nodeValue;
+            // print("content: " . $content . "\n\n");
+            return $sMsg;
         } else {
             return false;
         }
+    }
+
+    /**
+     * js api ticket 获取
+     */
+    const QY_JSAPI_TICKET = 'cgi-bin/get_jsapi_ticket';
+
+    /**
+     * 请求服务器jsapi_ticket
+     * @return mixed
+     */
+    public function requestJsApiTicket()
+    {
+        return $this->get(self::QY_JSAPI_TICKET, [
+            'access_token' => $this->getAccessToken(),
+        ]);
+    }
+
+    /**
+     * 生成js 必需的config
+     * 只需在视图文件输出JS代码:
+     *  wx.config(<?= json_encode($wehcat->jsApiConfig()) ?>); // 默认全权限
+     *  wx.config(<?= json_encode($wehcat->jsApiConfig([ // 只允许使用分享到朋友圈功能
+     *      'jsApiList' => [
+     *          'onMenuShareTimeline'
+     *      ]
+     *  ])) ?>);
+     * @param array $config
+     * @return array
+     * @throws HttpException
+     */
+    public function jsApiConfig(array $config = [])
+    {
+        $data = [
+            'jsapi_ticket' => $this->getJsApiTicket(),
+            'noncestr'     => Yii::$app->security->generateRandomString(16),
+            'timestamp'    => $_SERVER['REQUEST_TIME'],
+            'url'          => explode('#', Yii::$app->request->getAbsoluteUrl())[0],
+        ];
+        return array_merge([
+            'debug'     => false,
+            'appId'     => $this->corpid,
+            'timestamp' => $data['timestamp'],
+            'nonceStr'  => $data['noncestr'],
+            'signature' => sha1(urldecode(http_build_query($data))),
+            'jsApiList' => [
+                'onMenuShareTimeline',
+                'onMenuShareAppMessage',
+                'onMenuShareQQ',
+                'onMenuShareWeibo',
+                'startRecord',
+                'stopRecord',
+                'onVoiceRecordEnd',
+                'playVoice',
+                'pauseVoice',
+                'stopVoice',
+                'onVoicePlayEnd',
+                'uploadVoice',
+                'downloadVoice',
+                'chooseImage',
+                'previewImage',
+                'uploadImage',
+                'downloadImage',
+                'translateVoice',
+                'getNetworkType',
+                'openLocation',
+                'getLocation',
+                'hideOptionMenu',
+                'showOptionMenu',
+                'hideMenuItems',
+                'showMenuItems',
+                'hideAllNonBaseMenuItem',
+                'showAllNonBaseMenuItem',
+                'closeWindow',
+                'scanQRCode',
+            ],
+        ], $config);
     }
 }

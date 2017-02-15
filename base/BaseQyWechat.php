@@ -7,17 +7,20 @@
 namespace liasica\qywechat\base;
 
 use yii\base\Event;
+use yii\base\InvalidConfigException;
 use yii\web\BadRequestHttpException;
 
 abstract class BaseQyWechat extends BaseWechat
 {
     const AFTER_UPDATE_ACCESS_TOKEN = 'afterUpdateAccessToekn'; // 更新全局access_token
+    const AFTER_UPDATE_JSAPI_TICKET = 'afterUpdateJsapiTicket';
     const QY_BASE_URL               = 'https://qyapi.weixin.qq.com/';
 
     /**
      * @var array 微信全局access_token
      */
     private $_accessToken;
+    private $_jsApiTicket;
 
     /**
      * 构建微信请求链接
@@ -42,6 +45,7 @@ abstract class BaseQyWechat extends BaseWechat
      */
     public function getAccessToken($force = false)
     {
+
         $time = time();
         // 更新access_token
         if ($this->_accessToken == null || $this->_accessToken['expire'] < $time || $force) {
@@ -61,17 +65,70 @@ abstract class BaseQyWechat extends BaseWechat
     /**
      * 设置access_token
      * @param array $accessToken
+     * @throws \yii\base\InvalidConfigException
      */
     public function setAccessToken(array $accessToken)
     {
         if (!isset($accessToken['access_token'])) {
-            throw new InvalidParamException('缺少access_token参数');
+            throw new InvalidConfigException('缺少access_token参数');
         } elseif (!isset($accessToken['expire'])) {
-            throw new InvalidParamException('缺少expired参数');
+            throw new InvalidConfigException('缺少expired参数');
         } elseif ($accessToken['expire'] < time()) {
-            throw new InvalidParamException('expired不能小于当前时间');
+            throw new InvalidConfigException('expired不能小于当前时间');
         }
         $this->_accessToken = $accessToken;
+    }
+
+    /**
+     * 请求微信服务器获取JsApiTicket
+     * 必须返回以下格式内容
+     * [
+     *     'ticket => 'xxx',
+     *     'expirs_in' => 7200
+     * ]
+     * @return array|bool
+     */
+    abstract protected function requestJsApiTicket();
+
+    /**
+     * 生成js 必要的config
+     * @param array $config
+     * @return
+     */
+    abstract public function jsApiConfig(array $config = []);
+
+    /**
+     * 获取js api ticket
+     * 超时后会自动重新获取JsApiTicket并触发事件
+     * @param bool $force 是否强制获取
+     * @return mixed
+     * @throws HttpException
+     */
+    public function getJsApiTicket($force = false)
+    {
+        $time = time(); // 为了更精确控制.取当前时间计算
+        if ($this->_jsApiTicket === null || $this->_jsApiTicket['expire'] < $time || $force) {
+            $result = $this->_jsApiTicket === null && !$force ? $this->getCache('jsapi_ticket', false) : false;
+            if ($result === false) {
+                if (!($result = $this->requestJsApiTicket())) {
+                    throw new HttpException(500, 'Fail to get jsapi_ticket from wechat server.');
+                }
+                $result['expire'] = $time + $result['expires_in'];
+                $this->trigger(self::AFTER_UPDATE_JSAPI_TICKET, new Event(['data' => $result]));
+                $this->setCache('jsapi_ticket', $result, $result['expires_in']);
+            }
+            $this->setJsApiTicket($result);
+        }
+        return $this->_jsApiTicket['ticket'];
+    }
+
+    /**
+     * 设置JsApiTicket
+     * @param array $jsApiTicket
+     */
+    public function setJsApiTicket(array $jsApiTicket)
+    {
+        $this->_jsApiTicket = $jsApiTicket;
     }
 
     const QY_AUTHORIZE_URI = 'https://open.weixin.qq.com/connect/oauth2/authorize';
@@ -112,21 +169,6 @@ abstract class BaseQyWechat extends BaseWechat
             'access_token' => $this->getAccessToken(),
             'userid'       => $userid,
         ]);
-        return isset($ret['errcode']) && $ret['errcode'] !== 0 ? false : $ret;
-    }
-
-    const QY_UPDATE_USER = 'cgi-bin/user/update';
-
-    /**
-     * 更新用户信息
-     * @param       $userid
-     * @param array $data
-     * @return bool|mixed
-     */
-    public function updateUser($userid, array $data)
-    {
-        $ret           = $this->rawPost(self::QY_UPDATE_USER, array_merge($data, ['userid' => $userid]), ['access_token' => $this->getAccessToken()]);
-        $this->lastRet = $ret;
         return isset($ret['errcode']) && $ret['errcode'] !== 0 ? false : $ret;
     }
 
@@ -244,20 +286,16 @@ abstract class BaseQyWechat extends BaseWechat
         return isset($ret['errcode']) && $ret['errcode'] !== 0 ? false : $ret;
     }
 
-    const QY_MATERIAL_ADD = 'cgi-bin/material/add_material';
+    const QY_MSG_SEND = 'cgi-bin/message/send';
 
     /**
-     * 上传其他类型永久素材
-     * @param       $type
-     * @param       $file
-     * @param array $data
+     * 发送消息通知
+     * @param $data
      * @return bool|mixed
      */
-    public function addMaterial($type, $file, $data = [])
+    public function sendMessage($data)
     {
-        $ret           = $this->post(self::QY_MATERIAL_ADD, array_merge($data, [
-            'media' => $this->uploadFile($file),
-        ]), ['access_token' => $this->getAccessToken(), 'type' => $type]);
+        $ret           = $this->rawPost(self::QY_MSG_SEND, $data, ['access_token' => $this->getAccessToken()]);
         $this->lastRet = $ret;
         return isset($ret['errcode']) && $ret['errcode'] !== 0 ? false : $ret;
     }
