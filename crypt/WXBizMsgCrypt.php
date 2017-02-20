@@ -41,7 +41,7 @@ class WXBizMsgCrypt
         }
         $pc = new PrpCrypt($this->m_sEncodingAesKey);
         //verify msg_signature
-        $sha1  = new SHA1;
+        $sha1  = new SHA1();
         $array = $sha1->getSHA1($this->m_sToken, $sTimeStamp, $sNonce, $sEchoStr);
         $ret   = $array[0];
         if ($ret != 0) {
@@ -91,7 +91,7 @@ class WXBizMsgCrypt
         }
         $encrypt = $array[1];
         //生成安全签名
-        $sha1  = new SHA1;
+        $sha1  = new SHA1();
         $array = $sha1->getSHA1($this->m_sToken, $sTimeStamp, $sNonce, $encrypt);
         $ret   = $array[0];
         if ($ret != 0) {
@@ -99,7 +99,7 @@ class WXBizMsgCrypt
         }
         $signature = $array[1];
         //生成发送的xml
-        $xmlparse    = new XMLParse;
+        $xmlparse    = new XMLParse();
         $sEncryptMsg = $xmlparse->generate($encrypt, $signature, $sTimeStamp, $sNonce);
         return ErrorCode::$OK;
     }
@@ -130,7 +130,7 @@ class WXBizMsgCrypt
         }
         $pc = new PrpCrypt($this->m_sEncodingAesKey);
         //提取密文
-        $xmlparse = new XMLParse;
+        $xmlparse = new XMLParse();
         $array    = $xmlparse->extract($sPostData);
         $ret      = $array[0];
         if ($ret != 0) {
@@ -142,7 +142,7 @@ class WXBizMsgCrypt
         $encrypt     = $array[1];
         $touser_name = $array[2];
         //验证安全签名
-        $sha1  = new SHA1;
+        $sha1  = new SHA1();
         $array = $sha1->getSHA1($this->m_sToken, $sTimeStamp, $sNonce, $encrypt);
         $ret   = $array[0];
         if ($ret != 0) {
