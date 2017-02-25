@@ -135,7 +135,8 @@ class Qywechat extends BaseQyWechat
             // $xml->loadXML($sMsg);
             // $content = $xml->getElementsByTagName('Content')->item(0)->nodeValue;
             // print("content: " . $content . "\n\n");
-            return $sMsg;
+            $ret = (array)simplexml_load_string($sMsg, 'SimpleXMLElement', LIBXML_NOCDATA);
+            return json_decode(json_encode($ret), true);
         } else {
             return false;
         }
